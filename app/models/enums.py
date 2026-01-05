@@ -27,4 +27,5 @@ class StatusInscricao(str, Enum):
     CANCELADA = "cancelada"     # Inscrição cancelada pelo colaborador
     REJEITADA = "rejeitada"     # Inscrição rejeitada pelo admin
     CONCLUIDA = "concluida"     # Colaborador completou a diária
+    FALTA = "falta"             # Falta - sem presença confirmada
 

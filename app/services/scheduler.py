@@ -61,19 +61,33 @@ def executar_scheduler():
     """
     Loop principal do scheduler.
     Roda a cada 30 minutos verificando diárias para fechar.
+    Roda a cada hora verificando faltas.
     """
     print("[Scheduler] Iniciando scheduler de diárias...")
+    contador_ciclos = 0
 
     while True:
         try:
             db = SessionLocal()
+            
+            # Fecha diárias próximas (a cada 30 min)
             fechadas = fechar_diarias_proximas(db, horas_antes=4)
             if fechadas:
                 print(f"[Scheduler] {len(fechadas)} diária(s) fechada(s) automaticamente")
+            
+            # Marca faltas (a cada hora - ciclos pares)
+            if contador_ciclos % 2 == 0:
+                from app.services.attendance_service import AttendanceService
+                attendance_service = AttendanceService(db)
+                resultado = attendance_service.marcar_faltas_automaticas()
+                if resultado['total_faltas'] > 0:
+                    print(f"[Scheduler] {resultado['total_faltas']} falta(s) marcada(s), {resultado['total_penalidades']} penalidade(s) aplicada(s)")
+            
             db.close()
         except Exception as e:
             print(f"[Scheduler] Erro: {e}")
 
+        contador_ciclos += 1
         # Aguarda 30 minutos
         time_module.sleep(30 * 60)
 

@@ -116,6 +116,18 @@ class InscricaoService:
     def inscrever(self, pessoa_id: int, inscricao_data: InscricaoCreate) -> Inscricao:
         """Inscreve colaborador em uma diária."""
         from datetime import datetime, timedelta
+        from app.repositories.pessoa_repository import PessoaRepository
+
+        # Verifica se pessoa está bloqueada
+        pessoa_repo = PessoaRepository(self.repository.db)
+        pessoa = pessoa_repo.get_by_id(pessoa_id)
+        
+        if pessoa and pessoa.bloqueado and pessoa.bloqueado_ate:
+            if pessoa.bloqueado_ate >= date.today():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Você está bloqueado até {pessoa.bloqueado_ate.strftime('%d/%m/%Y')}. Motivo: {pessoa.motivo_bloqueio or 'Falta em diária anterior'}",
+                )
 
         diaria = self.diaria_repository.get_by_id_with_inscricoes(inscricao_data.diaria_id)
 
@@ -219,6 +231,13 @@ class InscricaoService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para cancelar esta inscrição",
+            )
+
+        # Verifica se a diária ainda está aberta para cancelamentos
+        if inscricao.diaria.status != StatusDiaria.ABERTA:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não é possível cancelar inscrição após o fechamento da diária",
             )
 
         # Verifica se pode cancelar
