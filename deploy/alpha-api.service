@@ -1,0 +1,16 @@
+[Unit]
+Description=Alpha API - FastAPI Backend
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/alpha-backend
+Environment="PATH=/home/ubuntu/alpha-backend/venv/bin"
+EnvironmentFile=/home/ubuntu/alpha-backend/.env
+ExecStart=/home/ubuntu/alpha-backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
