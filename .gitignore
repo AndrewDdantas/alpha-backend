@@ -1,0 +1,29 @@
+# Ignorar ambiente virtual
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Arquivo de ambiente
+.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Cache
+.cache/
+.pytest_cache/
+
+# Builds
+dist/
+build/
+*.egg-info/
