@@ -15,9 +15,11 @@ class Pessoa(Base):
     nome = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     cpf = Column(String(14), unique=True, index=True, nullable=False)
+    pis = Column(String(14), unique=True, index=True, nullable=False)  # PIS/PASEP
     telefone = Column(String(20), nullable=True)
     data_nascimento = Column(DateTime, nullable=True)
     endereco = Column(String(255), nullable=True)
+    complemento = Column(String(100), nullable=True)  # Complemento do endereço
     cidade = Column(String(100), nullable=True)
     estado = Column(String(2), nullable=True)
     cep = Column(String(10), nullable=True)
