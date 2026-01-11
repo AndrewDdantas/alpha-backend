@@ -1,5 +1,5 @@
 """
-Serviço de armazenamento de arquivos usando Supabase Storage (S3 Compatible).
+Serviço de armazenamento de arquivos usando MinIO (S3 Compatible).
 """
 import boto3
 from botocore.client import Config
@@ -11,20 +11,38 @@ from app.core.config import settings
 
 
 class StorageService:
-    """Serviço para upload de arquivos no Supabase Storage via S3."""
+    """Serviço para upload de arquivos no MinIO Storage via S3."""
 
     def __init__(self):
-        """Inicializa o cliente S3 para Supabase Storage."""
+        """Inicializa o cliente S3 para MinIO."""
+        # Monta a URL do endpoint
+        protocol = "https" if settings.MINIO_SECURE else "http"
+        endpoint_url = f"{protocol}://{settings.MINIO_ENDPOINT}"
+        
         self.s3_client = boto3.client(
             's3',
-            endpoint_url=settings.SUPABASE_STORAGE_URL,
-            aws_access_key_id=settings.SUPABASE_STORAGE_ACCESS_KEY,
-            aws_secret_access_key=settings.SUPABASE_STORAGE_SECRET_KEY,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=settings.MINIO_ACCESS_KEY,
+            aws_secret_access_key=settings.MINIO_SECRET_KEY,
             config=Config(signature_version='s3v4'),
-            region_name=settings.SUPABASE_STORAGE_REGION
+            region_name='us-east-1'  # MinIO não usa região real
         )
-        self.bucket = settings.SUPABASE_STORAGE_BUCKET
-        self.project_url = settings.SUPABASE_PROJECT_URL
+        self.bucket = settings.MINIO_BUCKET
+        self.public_url = settings.MINIO_PUBLIC_URL
+        
+        # Garante que o bucket existe
+        self._ensure_bucket_exists()
+    
+    def _ensure_bucket_exists(self):
+        """Cria o bucket se não existir."""
+        try:
+            self.s3_client.head_bucket(Bucket=self.bucket)
+        except:
+            try:
+                self.s3_client.create_bucket(Bucket=self.bucket)
+                print(f"[MinIO] Bucket '{self.bucket}' criado com sucesso")
+            except Exception as e:
+                print(f"[MinIO] Aviso ao criar bucket: {e}")
 
     def upload_presenca_foto(
         self,
@@ -66,8 +84,8 @@ class StorageService:
             ContentType=content_type,
         )
         
-        # Retorna URL pública
-        public_url = f"{self.project_url}/storage/v1/object/public/{self.bucket}/{filename}"
+        # Retorna URL pública (MinIO)
+        public_url = f"{self.public_url}/{self.bucket}/{filename}"
         return public_url
 
     def upload_perfil_foto(
@@ -108,8 +126,8 @@ class StorageService:
             ContentType=content_type,
         )
         
-        # Retorna URL pública
-        public_url = f"{self.project_url}/storage/v1/object/public/{self.bucket}/{filename}"
+        # Retorna URL pública (MinIO)
+        public_url = f"{self.public_url}/{self.bucket}/{filename}"
         return public_url
 
     def delete_file(self, file_path: str) -> bool:

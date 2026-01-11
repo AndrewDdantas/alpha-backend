@@ -34,13 +34,13 @@ class Settings(BaseSettings):
     # Google Maps API
     GOOGLE_MAPS_API_KEY: str = "AIzaSyA758ldyTDqtomDirS2I-gtyvtv5_wVLkI"
 
-    # Supabase Storage (S3)
-    SUPABASE_STORAGE_URL: str = "https://pdwrzddksthiewwqpfml.storage.supabase.co/storage/v1/s3"
-    SUPABASE_STORAGE_ACCESS_KEY: str = "c7328c01c8bf99cc3c42fd3867dd233a"
-    SUPABASE_STORAGE_SECRET_KEY: str = "bf87cbbe208fa7f5af33430cdfbc39f8053afa8d02c65ac32919e4b299b4bc89"
-    SUPABASE_STORAGE_BUCKET: str = "ALPHA"
-    SUPABASE_PROJECT_URL: str = "https://pdwrzddksthiewwqpfml.supabase.co"
-    SUPABASE_STORAGE_REGION: str = "us-west-2"
+    # MinIO Storage (S3 Compatible)
+    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ACCESS_KEY: str = "minio_admin"
+    MINIO_SECRET_KEY: str = "minio_secret"
+    MINIO_BUCKET: str = "sgp-presencas"
+    MINIO_SECURE: bool = False  # True se usar HTTPS
+    MINIO_PUBLIC_URL: str = "http://localhost:9000"  # URL pública para acessar arquivos
 
     class Config:
         env_file = ".env"
