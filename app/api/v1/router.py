@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import pessoas, auth, rotas, empresas, diarias, veiculos, alocacoes, presencas, relatorios, pontos_onibus
+from app.api.v1.endpoints import pessoas, auth, rotas, empresas, diarias, veiculos, alocacoes, presencas, relatorios, pontos_onibus, relatorios_extras
 
 api_router = APIRouter()
 
@@ -13,6 +13,7 @@ api_router.include_router(veiculos.router, prefix="/veiculos", tags=["Veículos"
 api_router.include_router(alocacoes.router, prefix="/alocacoes", tags=["Alocações"])
 api_router.include_router(presencas.router, prefix="/presencas", tags=["Presenças"])
 api_router.include_router(relatorios.router, prefix="/relatorios", tags=["Relatórios"])
+api_router.include_router(relatorios_extras.router, prefix="/relatorios", tags=["Relatórios Extras"])
 api_router.include_router(pontos_onibus.router, prefix="/pontos-onibus", tags=["Pontos de Ônibus"])
 
 
