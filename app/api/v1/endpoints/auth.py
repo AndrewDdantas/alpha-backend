@@ -53,6 +53,17 @@ def registro(
             )
 
     # Cria o usuário
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Registro payload - Nome: {dados.nome}, CPF: {dados.cpf}, PIS: {dados.pis}")
+
+    if not dados.pis:
+        logger.error(f"Tentativa de registro sem PIS! Dados: {dados}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="O campo PIS é obrigatório e não foi recebido corretamente."
+        )
+
     from app.schemas.pessoa import PessoaCreate
     pessoa_data = PessoaCreate(
         nome=dados.nome,
