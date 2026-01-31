@@ -58,6 +58,7 @@ def registro(
         nome=dados.nome,
         email=dados.email,
         cpf=dados.cpf,
+        pis=dados.pis,
         telefone=dados.telefone,
         senha=dados.senha,
         ponto_parada_id=dados.ponto_parada_id,

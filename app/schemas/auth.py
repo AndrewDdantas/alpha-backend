@@ -9,6 +9,7 @@ class RegistroUsuario(BaseModel):
     nome: str
     email: EmailStr
     cpf: str
+    pis: str  # PIS/PASEP obrigatório
     telefone: Optional[str] = None
     senha: str
     ponto_parada_id: Optional[int] = None  # Ponto de embarque do fretado
