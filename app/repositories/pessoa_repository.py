@@ -39,6 +39,7 @@ class PessoaRepository:
             nome=pessoa_data.nome,
             email=pessoa_data.email,
             cpf=pessoa_data.cpf,
+            pis=pessoa_data.pis,
             telefone=pessoa_data.telefone,
             data_nascimento=pessoa_data.data_nascimento,
             endereco=pessoa_data.endereco,
