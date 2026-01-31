@@ -10,7 +10,7 @@ class VeiculoBase(BaseModel):
     placa: str
     modelo: str
     capacidade: int
-    tipo: str = "van"
+    tipo: Optional[str] = "van"
     cor: Optional[str] = None
     ano: Optional[int] = None
     motorista: Optional[str] = None
