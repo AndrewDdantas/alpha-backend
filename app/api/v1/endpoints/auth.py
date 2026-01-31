@@ -42,6 +42,13 @@ def registro(
             detail="CPF já cadastrado",
         )
 
+    # Verifica se PIS já existe
+    if repository.get_by_pis(dados.pis):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="PIS já cadastrado",
+        )
+
     # Verifica se ponto de parada existe (se informado)
     if dados.ponto_parada_id:
         ponto_repo = PontoParadaRepository(db)

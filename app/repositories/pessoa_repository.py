@@ -25,6 +25,10 @@ class PessoaRepository:
         """Busca pessoa por CPF."""
         return self.db.query(Pessoa).filter(Pessoa.cpf == cpf).first()
 
+    def get_by_pis(self, pis: str) -> Optional[Pessoa]:
+        """Busca pessoa por PIS."""
+        return self.db.query(Pessoa).filter(Pessoa.pis == pis).first()
+
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Pessoa]:
         """Lista todas as pessoas com paginação."""
         return self.db.query(Pessoa).offset(skip).limit(limit).all()
