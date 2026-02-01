@@ -9,6 +9,10 @@ from app.db.session import SessionLocal, engine
 from app.models.empresa import Empresa
 from app.models.pessoa import Pessoa
 from app.models.diaria import Diaria, Inscricao
+# Importar modelos relacionados para evitar erro de mapper
+from app.models.turno import Turno 
+from app.models.veiculo import Veiculo
+from app.models.rota import Rota, PontoParada
 from app.models.enums import TipoPessoa, StatusDiaria, StatusInscricao
 from app.core.security import get_password_hash
 
