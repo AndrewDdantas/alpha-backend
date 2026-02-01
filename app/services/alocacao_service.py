@@ -290,7 +290,7 @@ class AlocacaoService:
         """
         resultado = []
         tempo_atual = datetime.combine(date.today(), horario_saida)
-        MINUTOS_POR_PARADA = 3  # Tempo de embarque
+        MINUTOS_POR_PARADA = 0  # Tempo de embarque (desabilitado)
         MINUTOS_VIAGEM_PADRAO = 10  # Fallback se Google Maps falhar
 
         # Agrupa colaboradores por ponto
