@@ -45,6 +45,7 @@ def seed_pagamentos():
                 nome="Colaborador Teste Pagamento",
                 email=email_teste,
                 cpf="99988877700",
+                pis="12345678900",
                 telefone="(11) 99999-9999",
                 senha_hash=get_password_hash("123456"),
                 tipo_pessoa=TipoPessoa.COLABORADOR,
