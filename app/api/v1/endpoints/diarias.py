@@ -9,7 +9,7 @@ from app.models.pessoa import Pessoa
 from app.models.enums import StatusDiaria, StatusInscricao
 from app.schemas.diaria import (
     DiariaCreate, DiariaUpdate, DiariaResponse, DiariaList, DiariaComInscricoes,
-    InscricaoCreate, InscricaoResponse, InscricaoComPessoa, MinhaInscricao,
+    InscricaoCreate, InscricaoResponse, InscricaoComPessoa, MinhaInscricao, InscricaoManual,
 )
 from app.services.diaria_service import DiariaService, InscricaoService
 
@@ -160,3 +160,29 @@ def listar_inscritos(
     
     service = InscricaoService(db)
     return service.listar_inscritos(diaria_id)
+
+
+@router.post("/{diaria_id}/adicionar-colaborador", response_model=InscricaoResponse, status_code=status.HTTP_201_CREATED)
+def adicionar_colaborador_manual(
+    diaria_id: int,
+    inscricao_data: InscricaoManual,
+    db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
+):
+    """
+    Adiciona um colaborador manualmente a uma diária (Gestor).
+    Permite ignorar regras de 11h de descanso se solicitado.
+    """
+    service = InscricaoService(db)
+    
+    # Converte InscricaoManual para InscricaoCreate
+    create_data = InscricaoCreate(
+        diaria_id=diaria_id,
+        observacao="Inscrição manual pelo gestor"
+    )
+    
+    return service.inscrever(
+        pessoa_id=inscricao_data.pessoa_id, 
+        inscricao_data=create_data, 
+        ignorar_intersticio=inscricao_data.ignorar_intersticio
+    )

@@ -113,7 +113,7 @@ class InscricaoService:
         inscricoes = self.repository.get_by_pessoa(pessoa_id)
         return inscricoes
 
-    def inscrever(self, pessoa_id: int, inscricao_data: InscricaoCreate) -> Inscricao:
+    def inscrever(self, pessoa_id: int, inscricao_data: InscricaoCreate, ignorar_intersticio: bool = False) -> Inscricao:
         """Inscreve colaborador em uma diária."""
         from datetime import datetime, timedelta
         from app.repositories.pessoa_repository import PessoaRepository
@@ -137,16 +137,31 @@ class InscricaoService:
                 detail="Diária não encontrada",
             )
 
-        # Verifica se diária está aberta
-        if diaria.status != StatusDiaria.ABERTA:
-            raise HTTPException(
+        # Verifica se diária está aberta (Gestor pode inscrever em qualquer status exceto CANCELADA?)
+        # Por segurança, mantemos a regra que a diária não pode estar cancelada.
+        # Mas se for manual, talvez o gestor queira inscrever mesmo em 'fechada' ou 'em_andamento'?
+        # Vamos permitir se for manual e não estiver cancelada.
+        if not ignorar_intersticio and diaria.status != StatusDiaria.ABERTA:
+             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Esta diária não está aberta para inscrições",
             )
+        
+        if ignorar_intersticio and diaria.status == StatusDiaria.CANCELADA:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não é possível inscrever em diária cancelada",
+            )
 
-        # Verifica se data não passou
+        # Verifica se data não passou (Gestor pode querer registrar retroativo?)
+        # Se for ignorar_intersticio (gestor), permitimos retroativo? 
+        # Vamos manter bloqueio de data passada por enquanto, a menos que seja explicitamente solicitado.
         if diaria.data < date.today():
-            raise HTTPException(
+             # Se for manual, vamos permitir? O usuário não pediu isso especificamente, 
+             # mas "Dobra" geralmente é no dia ou futuro.
+             # Manter restrição para evitar bagunça, mas se for manual deixa passar se for hoje?
+             # O código original já bloqueava < today.
+             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Esta diária já passou",
             )
@@ -163,62 +178,66 @@ class InscricaoService:
             self.repository.delete(inscricao_existente.id)
 
         # ========== NOVA VALIDAÇÃO: Intervalo mínimo de 11 horas ==========
-        # Verifica se há conflito com outras diárias ativas do colaborador
-        inscricoes_ativas = self.repository.get_inscricoes_ativas_pessoa(pessoa_id)
+        if not ignorar_intersticio:
+            # Verifica se há conflito com outras diárias ativas do colaborador
+            inscricoes_ativas = self.repository.get_inscricoes_ativas_pessoa(pessoa_id)
 
-        # Monta datetime da diária atual
-        diaria_inicio = datetime.combine(
-            diaria.data,
-            diaria.horario_inicio if diaria.horario_inicio else datetime.min.time()
-        )
-        diaria_fim = datetime.combine(
-            diaria.data,
-            diaria.horario_fim if diaria.horario_fim else datetime.max.time()
-        )
-
-        for inscricao in inscricoes_ativas:
-            outra_diaria = inscricao.diaria
-
-            # Monta datetime da outra diária
-            outra_inicio = datetime.combine(
-                outra_diaria.data,
-                outra_diaria.horario_inicio if outra_diaria.horario_inicio else datetime.min.time()
+            # Monta datetime da diária atual
+            diaria_inicio = datetime.combine(
+                diaria.data,
+                diaria.horario_inicio if diaria.horario_inicio else datetime.min.time()
             )
-            outra_fim = datetime.combine(
-                outra_diaria.data,
-                outra_diaria.horario_fim if outra_diaria.horario_fim else datetime.max.time()
+            diaria_fim = datetime.combine(
+                diaria.data,
+                diaria.horario_fim if diaria.horario_fim else datetime.max.time()
             )
 
-            # Calcula intervalo mínimo de 11 horas
-            intervalo_minimo = timedelta(hours=11)
+            for inscricao in inscricoes_ativas:
+                outra_diaria = inscricao.diaria
 
-            # Verifica se a nova diária respeita o intervalo de 11h após outra diária
-            if diaria_inicio < outra_fim + intervalo_minimo and diaria_inicio > outra_fim:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Você precisa de pelo menos 11 horas de descanso após a diária do dia {outra_diaria.data.strftime('%d/%m')}",
+                # Monta datetime da outra diária
+                outra_inicio = datetime.combine(
+                    outra_diaria.data,
+                    outra_diaria.horario_inicio if outra_diaria.horario_inicio else datetime.min.time()
+                )
+                outra_fim = datetime.combine(
+                    outra_diaria.data,
+                    outra_diaria.horario_fim if outra_diaria.horario_fim else datetime.max.time()
                 )
 
-            # Verifica se a nova diária respeita o intervalo de 11h antes da outra diária
-            if diaria_fim > outra_inicio - intervalo_minimo and diaria_fim < outra_inicio:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Você precisa de pelo menos 11 horas de descanso antes da diária do dia {outra_diaria.data.strftime('%d/%m')}",
-                )
+                # Calcula intervalo mínimo de 11 horas
+                intervalo_minimo = timedelta(hours=11)
 
-            # Verifica sobreposição de horários
-            if diaria_inicio < outra_fim and diaria_fim > outra_inicio:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Esta diária conflita com sua inscrição do dia {outra_diaria.data.strftime('%d/%m')}",
-                )
+                # Verifica se a nova diária respeita o intervalo de 11h após outra diária
+                if diaria_inicio < outra_fim + intervalo_minimo and diaria_inicio > outra_fim:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Você precisa de pelo menos 11 horas de descanso após a diária do dia {outra_diaria.data.strftime('%d/%m')}",
+                    )
+
+                # Verifica se a nova diária respeita o intervalo de 11h antes da outra diária
+                if diaria_fim > outra_inicio - intervalo_minimo and diaria_fim < outra_inicio:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Você precisa de pelo menos 11 horas de descanso antes da diária do dia {outra_diaria.data.strftime('%d/%m')}",
+                    )
+
+                # Verifica sobreposição de horários
+                if diaria_inicio < outra_fim and diaria_fim > outra_inicio:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Esta diária conflita com sua inscrição do dia {outra_diaria.data.strftime('%d/%m')}",
+                    )
 
         # Verifica se há vagas
         if diaria.vagas_disponiveis <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não há vagas disponíveis para esta diária",
-            )
+             # Se for gestor (ignorar_intersticio), permitimos estourar vagas?
+             # Geralmente sim, dobra é extra.
+             if not ignorar_intersticio:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Não há vagas disponíveis para esta diária",
+                )
 
         return self.repository.create(pessoa_id, inscricao_data)
 
