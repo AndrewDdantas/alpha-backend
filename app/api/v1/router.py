@@ -17,7 +17,7 @@ api_router.include_router(relatorios_extras.router, prefix="/relatorios", tags=[
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(pontos_onibus.router, prefix="/pontos-onibus", tags=["Pontos de Ônibus"])
 api_router.include_router(pagamentos.router, prefix="/pagamentos", tags=["Pagamentos"])
-api_router.include_router(perfis.router, prefix="/acesso", tags=["Controle de Acesso"])
+api_router.include_router(perfis.router, prefix="/perfis", tags=["Perfis e Permissões"])
 
 
 
