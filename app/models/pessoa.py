@@ -46,7 +46,13 @@ class Pessoa(Base):
 
     # Relacionamentos
     ponto_parada = relationship("PontoParada", back_populates="pessoas")
-    perfis = relationship("Perfil", secondary=pessoa_perfil, backref="pessoas")
+    perfis = relationship(
+        "Perfil", 
+        secondary=pessoa_perfil,
+        primaryjoin="Pessoa.id == pessoa_perfil.c.pessoa_id",
+        secondaryjoin="Perfil.id == pessoa_perfil.c.perfil_id",
+        backref="pessoas"
+    )
 
 
 
