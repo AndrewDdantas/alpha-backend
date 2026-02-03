@@ -60,6 +60,13 @@ class InscricaoComPessoa(InscricaoResponse):
     pessoa: PessoaSimples
 
 
+class InscricaoManual(BaseModel):
+    """Schema para inscrição manual feita pelo gestor."""
+
+    pessoa_id: int
+    ignorar_intersticio: bool = False
+
+
 # ========== Diária Schemas ==========
 
 class DiariaBase(BaseModel):
