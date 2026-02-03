@@ -10,6 +10,7 @@ from app.models.enums import TipoPessoa
 def require_roles(allowed_roles: List[TipoPessoa]):
     """
     Dependency factory para verificar se o usuário tem permissão.
+    Prioriza verificação por perfis, com fallback para tipo_pessoa.
     
     Uso:
         @router.get("/admin-only")
@@ -17,11 +18,36 @@ def require_roles(allowed_roles: List[TipoPessoa]):
             ...
     """
     async def role_checker(current_user: Pessoa = Depends(get_current_user)) -> Pessoa:
-        # Compara o valor do enum (string) para compatibilidade
-        user_role = current_user.tipo_pessoa.value if hasattr(current_user.tipo_pessoa, 'value') else current_user.tipo_pessoa
-        allowed_values = [r.value for r in allowed_roles]
+        # Mapeia tipos de pessoa para códigos de perfil
+        perfil_map = {
+            TipoPessoa.ADMIN: 'ADMINISTRADOR',
+            TipoPessoa.SUPERVISOR: ['SUPERVISOR', 'GESTOR_OPERACIONAL', 'ADMINISTRADOR'],
+            TipoPessoa.COLABORADOR: ['COLABORADOR', 'SUPERVISOR', 'GESTOR_OPERACIONAL', 'ADMINISTRADOR']
+        }
         
-        if user_role not in allowed_values:
+        # Verifica por perfis primeiro
+        tem_permissao = False
+        for role in allowed_roles:
+            codigos_perfil = perfil_map.get(role, [])
+            if isinstance(codigos_perfil, str):
+                codigos_perfil = [codigos_perfil]
+            
+            for codigo in codigos_perfil:
+                if user_has_perfil(current_user, codigo):
+                    tem_permissao = True
+                    break
+            if tem_permissao:
+                break
+        
+        # Fallback para tipo_pessoa se não encontrou perfil
+        if not tem_permissao:
+            user_role = current_user.tipo_pessoa.value if hasattr(current_user.tipo_pessoa, 'value') else current_user.tipo_pessoa
+            allowed_values = [r.value for r in allowed_roles]
+            
+            if user_role in allowed_values:
+                tem_permissao = True
+        
+        if not tem_permissao:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para acessar este recurso",
@@ -104,7 +130,53 @@ def require_any_permission(permission_codes: List[str]):
     return permission_checker
 
 
-# Atalhos para verificação de permissões
+# ========== Funções Helper para Verificação de Perfis/Permissões ==========
+
+def user_has_perfil(user: Pessoa, codigo_perfil: str) -> bool:
+    """Verifica se usuário tem um perfil específico (por código)."""
+    for perfil in user.perfis:
+        if perfil.ativo and perfil.codigo.lower() == codigo_perfil.lower():
+            return True
+    return False
+
+
+def user_has_permission(user: Pessoa, codigo_permissao: str) -> bool:
+    """Verifica se usuário tem uma permissão específica através de seus perfis."""
+    # Admin sempre tem todas as permissões (fallback para tipo_pessoa)
+    user_role = user.tipo_pessoa.value if hasattr(user.tipo_pessoa, 'value') else user.tipo_pessoa
+    if user_role == TipoPessoa.ADMIN.value:
+        return True
+    
+    # Verifica através dos perfis
+    for perfil in user.perfis:
+        if perfil.ativo:
+            for permissao in perfil.permissoes:
+                if permissao.ativo and permissao.codigo == codigo_permissao:
+                    return True
+    return False
+
+
+def user_has_any_permission(user: Pessoa, codigos_permissoes: List[str]) -> bool:
+    """Verifica se usuário tem pelo menos uma das permissões."""
+    return any(user_has_permission(user, codigo) for codigo in codigos_permissoes)
+
+
+def user_is_admin_or_supervisor(user: Pessoa) -> bool:
+    """
+    Verifica se usuário é admin ou supervisor.
+    Prioriza verificação por perfil, com fallback para tipo_pessoa.
+    """
+    # Verifica por perfis
+    if user_has_perfil(user, 'ADMINISTRADOR') or user_has_perfil(user, 'GESTOR_OPERACIONAL') or user_has_perfil(user, 'SUPERVISOR'):
+        return True
+    
+    # Fallback para tipo_pessoa
+    user_role = user.tipo_pessoa.value if hasattr(user.tipo_pessoa, 'value') else user.tipo_pessoa
+    return user_role in ['admin', 'supervisor']
+
+
+# ========== Atalhos para verificação de permissões ==========
+
 def require_admin():
     """Requer que o usuário seja admin."""
     return require_roles([TipoPessoa.ADMIN])

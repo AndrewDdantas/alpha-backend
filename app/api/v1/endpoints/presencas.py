@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.deps import get_db
-from app.core.permissions import require_authenticated, require_admin
+from app.core.permissions import require_authenticated, require_admin, user_is_admin_or_supervisor
 from app.models.pessoa import Pessoa
 from app.models.diaria import Diaria, Inscricao
 from app.models.presenca import RegistroPresenca
@@ -45,7 +45,7 @@ def upload_foto_presenca(
     """Faz upload de foto de presença para o Supabase Storage."""
     
     # Verifica permissão (admin ou supervisor)
-    if current_user.tipo_pessoa.value not in ['admin', 'supervisor']:
+    if not user_is_admin_or_supervisor(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Apenas supervisores podem fazer upload de fotos"
@@ -91,10 +91,10 @@ def registrar_presenca(
     
     # Verifica se o usuário é o supervisor da diária ou admin
     diaria = inscricao.diaria
-    is_admin = current_user.tipo_pessoa.value in ['admin', 'supervisor']
-    is_supervisor = diaria.supervisor_id == current_user.id
+    is_admin_supervisor = user_is_admin_or_supervisor(current_user)
+    is_diaria_supervisor = diaria.supervisor_id == current_user.id
     
-    if not is_admin and not is_supervisor:
+    if not is_admin_supervisor and not is_diaria_supervisor:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Apenas o supervisor da diária pode registrar presenças"
@@ -155,10 +155,10 @@ def listar_presencas_diaria(
         )
     
     # Verifica permissão
-    is_admin = current_user.tipo_pessoa.value in ['admin', 'supervisor']
-    is_supervisor = diaria.supervisor_id == current_user.id
+    is_admin_supervisor = user_is_admin_or_supervisor(current_user)
+    is_diaria_supervisor = diaria.supervisor_id == current_user.id
     
-    if not is_admin and not is_supervisor:
+    if not is_admin_supervisor and not is_diaria_supervisor:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sem permissão para ver presenças desta diária"

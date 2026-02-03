@@ -155,11 +155,23 @@ def login(
         )
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Inclui perfis do usuário no token
+    perfis_data = [
+        {
+            "id": perfil.id,
+            "codigo": perfil.codigo,
+            "nome": perfil.nome
+        }
+        for perfil in user.perfis if perfil.ativo
+    ]
+    
     access_token = create_access_token(
         data={
             "sub": str(user.id),
             "nome": user.nome,
             "tipo_pessoa": user.tipo_pessoa.value,
+            "perfis": perfis_data,
         },
         expires_delta=access_token_expires,
     )
