@@ -1,11 +1,10 @@
 """
-Service para envio de emails usando SendGrid.
+Service para envio de emails usando Resend.
 """
 import os
 import logging
 from typing import Optional
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content
+import resend
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +15,12 @@ class EmailService:
     def __init__(self):
         self.from_email = os.getenv("EMAIL_FROM", "noreply@alpha.com")
         self.base_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        self.sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
         self.enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
+        
+        # Configura Resend API Key
+        resend_api_key = os.getenv("RESEND_API_KEY")
+        if resend_api_key:
+            resend.api_key = resend_api_key
 
     def enviar_email_reset_senha(self, email: str, nome: str, token: str) -> bool:
         """
@@ -69,23 +72,22 @@ class EmailService:
             print("=" * 60 + "\n")
             return True
 
-        # Envio real via SendGrid
+        # Envio real via Resend
         try:
-            message = Mail(
-                from_email=Email(self.from_email, "Sistema Alpha"),
-                to_emails=To(email),
-                subject=subject,
-                html_content=Content("text/html", body)
-            )
+            params = {
+                "from": self.from_email,
+                "to": [email],
+                "subject": subject,
+                "html": body,
+            }
             
-            sg = SendGridAPIClient(self.sendgrid_api_key)
-            response = sg.send(message)
+            response = resend.Emails.send(params)
             
             logger.info(f"✅ Email enviado com sucesso para {email}")
-            return response.status_code in [200, 202]
+            return True
             
         except Exception as e:
-            logger.error(f"❌ Erro ao enviar email via SendGrid: {e}")
+            logger.error(f"❌ Erro ao enviar email via Resend: {e}")
             # Em caso de erro, loga no console para garantir que o link seja acessível
             print("\n" + "=" * 60)
             print("⚠️  ERRO AO ENVIAR EMAIL - Link de recuperação:")
@@ -122,20 +124,19 @@ class EmailService:
             print(f"\n📧 Email de confirmação de reset enviado para {email}\n")
             return True
 
-        # Envio real via SendGrid
+        # Envio real via Resend
         try:
-            message = Mail(
-                from_email=Email(self.from_email, "Sistema Alpha"),
-                to_emails=To(email),
-                subject=subject,
-                html_content=Content("text/html", body)
-            )
+            params = {
+                "from": self.from_email,
+                "to": [email],
+                "subject": subject,
+                "html": body,
+            }
             
-            sg = SendGridAPIClient(self.sendgrid_api_key)
-            response = sg.send(message)
+            response = resend.Emails.send(params)
             
             logger.info(f"✅ Email de confirmação enviado para {email}")
-            return response.status_code in [200, 202]
+            return True
             
         except Exception as e:
             logger.error(f"❌ Erro ao enviar email de confirmação: {e}")
