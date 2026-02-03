@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import Depends, HTTPException, status
 
@@ -28,6 +28,80 @@ def require_roles(allowed_roles: List[TipoPessoa]):
             )
         return current_user
     return role_checker
+
+
+def require_permission(permission_code: str):
+    """
+    Dependency factory para verificar se o usuário tem uma permissão específica.
+    
+    Verifica se o usuário possui a permissão através de seus perfis atribuídos.
+    
+    Uso:
+        @router.post("/criar-diaria")
+        def criar_diaria(user: Pessoa = Depends(require_permission("diarias.create"))):
+            ...
+    """
+    async def permission_checker(current_user: Pessoa = Depends(get_current_user)) -> Pessoa:
+        # Admin sempre tem todas as permissões
+        user_role = current_user.tipo_pessoa.value if hasattr(current_user.tipo_pessoa, 'value') else current_user.tipo_pessoa
+        if user_role == TipoPessoa.ADMIN.value:
+            return current_user
+        
+        # Verifica se o usuário tem a permissão através dos perfis
+        tem_permissao = False
+        for perfil in current_user.perfis:
+            if perfil.ativo:
+                for permissao in perfil.permissoes:
+                    if permissao.ativo and permissao.codigo == permission_code:
+                        tem_permissao = True
+                        break
+            if tem_permissao:
+                break
+        
+        if not tem_permissao:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Você não tem a permissão '{permission_code}' necessária para acessar este recurso",
+            )
+        
+        return current_user
+    return permission_checker
+
+
+def require_any_permission(permission_codes: List[str]):
+    """
+    Dependency factory para verificar se o usuário tem pelo menos uma das permissões.
+    
+    Uso:
+        @router.get("/relatorios")
+        def relatorios(user: Pessoa = Depends(require_any_permission(["relatorios.read", "relatorios.manage"]))):
+            ...
+    """
+    async def permission_checker(current_user: Pessoa = Depends(get_current_user)) -> Pessoa:
+        # Admin sempre tem todas as permissões
+        user_role = current_user.tipo_pessoa.value if hasattr(current_user.tipo_pessoa, 'value') else current_user.tipo_pessoa
+        if user_role == TipoPessoa.ADMIN.value:
+            return current_user
+        
+        # Verifica se o usuário tem pelo menos uma das permissões
+        tem_permissao = False
+        for perfil in current_user.perfis:
+            if perfil.ativo:
+                for permissao in perfil.permissoes:
+                    if permissao.ativo and permissao.codigo in permission_codes:
+                        tem_permissao = True
+                        break
+            if tem_permissao:
+                break
+        
+        if not tem_permissao:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Você precisa de uma das permissões {permission_codes} para acessar este recurso",
+            )
+        
+        return current_user
+    return permission_checker
 
 
 # Atalhos para verificação de permissões

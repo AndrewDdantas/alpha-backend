@@ -37,3 +37,23 @@ class RegistroUsuario(BaseModel):
         if len(v) < 6:
             raise ValueError("Senha deve ter no mínimo 6 caracteres")
         return v
+
+
+class SolicitarResetSenha(BaseModel):
+    """Schema para solicitar reset de senha."""
+
+    email: EmailStr
+
+
+class RedefinirSenha(BaseModel):
+    """Schema para redefinir senha com token."""
+
+    token: str
+    nova_senha: str
+
+    @field_validator("nova_senha")
+    @classmethod
+    def senha_forte(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Senha deve ter no mínimo 6 caracteres")
+        return v

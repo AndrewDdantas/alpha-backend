@@ -6,6 +6,7 @@ from app.models.diaria import Diaria, Inscricao
 from app.models.veiculo import Veiculo
 from app.models.alocacao import AlocacaoDiaria, AlocacaoColaborador
 from app.models.presenca import RegistroPresenca
+from app.models.perfil import Perfil, Permissao
 
 __all__ = [
     "Pessoa", "TipoPessoa",
@@ -16,5 +17,6 @@ __all__ = [
     "Veiculo",
     "AlocacaoDiaria", "AlocacaoColaborador",
     "RegistroPresenca",
+    "Perfil", "Permissao",
 ]
 

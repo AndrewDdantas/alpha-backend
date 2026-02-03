@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 from app.models.enums import TipoPessoa
+from app.models.perfil import pessoa_perfil
 
 
 class Pessoa(Base):
@@ -33,6 +34,10 @@ class Pessoa(Base):
     motivo_bloqueio = Column(Text, nullable=True)
     bloqueado_ate = Column(Date, nullable=True)  # Bloqueio temporário
     
+    # Campos de recuperação de senha
+    reset_token = Column(String(255), nullable=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+    
     criado_em = Column(DateTime, default=datetime.utcnow)
     atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -41,6 +46,7 @@ class Pessoa(Base):
 
     # Relacionamentos
     ponto_parada = relationship("PontoParada", back_populates="pessoas")
+    perfis = relationship("Perfil", secondary=pessoa_perfil, backref="pessoas")
 
 
 

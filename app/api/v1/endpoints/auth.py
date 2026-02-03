@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -6,12 +7,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import get_db
-from app.core.security import verify_password, create_access_token
+from app.core.security import verify_password, create_access_token, get_password_hash
 from app.repositories.pessoa_repository import PessoaRepository
 from app.repositories.rota_repository import PontoParadaRepository
 from app.schemas.token import Token
 from app.schemas.pessoa import PessoaResponse
-from app.schemas.auth import RegistroUsuario
+from app.schemas.auth import RegistroUsuario, SolicitarResetSenha, RedefinirSenha
+from app.services.email_service import email_service
 
 router = APIRouter()
 
@@ -163,4 +165,94 @@ def login(
     )
 
     return Token(access_token=access_token)
+
+
+@router.post("/esqueci-senha")
+def esqueci_senha(
+    dados: SolicitarResetSenha,
+    db: Session = Depends(get_db),
+):
+    """
+    Solicita reset de senha.
+    Envia email com link e token para redefinir senha.
+    """
+    repository = PessoaRepository(db)
+    user = repository.get_by_email(dados.email)
+
+    # Por segurança, sempre retorna sucesso mesmo se email não existir
+    # Isso evita que atacantes descubram emails válidos no sistema
+    if not user:
+        return {
+            "message": "Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha."
+        }
+
+    # Gera token seguro de reset
+    reset_token = secrets.token_urlsafe(32)
+    
+    # Define expiração (1 hora)
+    expires = datetime.utcnow() + timedelta(hours=1)
+    
+    # Salva token no banco
+    user.reset_token = reset_token
+    user.reset_token_expires = expires
+    db.commit()
+
+    # Envia email com link de reset
+    email_service.enviar_email_reset_senha(
+        email=user.email,
+        nome=user.nome,
+        token=reset_token,
+    )
+
+    return {
+        "message": "Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha."
+    }
+
+
+@router.post("/redefinir-senha")
+def redefinir_senha(
+    dados: RedefinirSenha,
+    db: Session = Depends(get_db),
+):
+    """
+    Redefine senha usando token recebido por email.
+    """
+    repository = PessoaRepository(db)
+    
+    # Busca usuário pelo token
+    user = db.query(repository.model).filter(
+        repository.model.reset_token == dados.token
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido ou expirado",
+        )
+
+    # Verifica se token expirou
+    if not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token expirado. Solicite um novo link de recuperação.",
+        )
+
+    # Atualiza senha
+    user.senha_hash = get_password_hash(dados.nova_senha)
+    
+    # Limpa token de reset
+    user.reset_token = None
+    user.reset_token_expires = None
+    
+    db.commit()
+
+    # Envia email de confirmação
+    email_service.enviar_email_confirmacao_reset(
+        email=user.email,
+        nome=user.nome,
+    )
+
+    return {
+        "message": "Senha redefinida com sucesso! Você já pode fazer login com sua nova senha."
+    }
 
