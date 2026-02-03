@@ -26,7 +26,7 @@ router = APIRouter()
 
 # ========== Endpoints de Perfis ==========
 
-@router.get("/perfis", response_model=PerfilList)
+@router.get("/", response_model=PerfilList)
 def list_perfis(
     skip: int = 0,
     limit: int = 100,
@@ -40,7 +40,7 @@ def list_perfis(
     return service.list_perfis(skip=skip, limit=limit, ativo=ativo, sistema=sistema)
 
 
-@router.get("/perfis/{perfil_id}", response_model=PerfilResponse)
+@router.get("/{perfil_id}", response_model=PerfilResponse)
 def get_perfil(
     perfil_id: int,
     db: Session = Depends(get_db),
@@ -51,7 +51,7 @@ def get_perfil(
     return service.get_perfil(perfil_id)
 
 
-@router.post("/perfis", response_model=PerfilResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=PerfilResponse, status_code=status.HTTP_201_CREATED)
 def create_perfil(
     perfil_data: PerfilCreate,
     db: Session = Depends(get_db),
@@ -62,7 +62,7 @@ def create_perfil(
     return service.create_perfil(perfil_data)
 
 
-@router.put("/perfis/{perfil_id}", response_model=PerfilResponse)
+@router.put("/{perfil_id}", response_model=PerfilResponse)
 def update_perfil(
     perfil_id: int,
     perfil_data: PerfilUpdate,
@@ -74,7 +74,7 @@ def update_perfil(
     return service.update_perfil(perfil_id, perfil_data)
 
 
-@router.delete("/perfis/{perfil_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{perfil_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_perfil(
     perfil_id: int,
     db: Session = Depends(get_db),
