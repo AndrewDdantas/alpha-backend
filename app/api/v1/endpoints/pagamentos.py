@@ -66,6 +66,11 @@ def get_previsao_pagamentos(
         diaria = inscricao.diaria
         valor = diaria.valor or 0
         
+        # Verifica se é domingo (6 = Domingo) - DSR (Descanso Semanal Remunerado)
+        # Trabalhar em domingo = recebe dobro
+        if diaria.data.weekday() == 6:
+            valor = valor * 2
+        
         # Define o período
         mes = diaria.data.month
         ano = diaria.data.year
@@ -104,7 +109,8 @@ def get_previsao_pagamentos(
         pagamentos[key]["detalhes"].append({
             "data_diaria": diaria.data,
             "titulo": diaria.titulo,
-            "valor": float(valor)
+            "valor": float(valor),
+            "eh_dsr": diaria.data.weekday() == 6  # Indica se é domingo (DSR)
         })
 
     # Transforma em lista e ordena por data de pagamento (mais recente primeiro)

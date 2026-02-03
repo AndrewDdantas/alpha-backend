@@ -68,7 +68,23 @@ def relatorio_diarias(
         
         # Calcula valor apenas para quem teve presença registrada
         if diaria.valor:
-            total_valor += diaria.valor * presencas
+            valor_diaria = diaria.valor
+            # Verifica se é domingo (6 = Domingo) - DSR (Descanso Semanal Remunerado)
+            # Trabalhar em domingo = recebe dobro
+            if diaria.data.weekday() == 6:
+                valor_diaria = valor_diaria * 2
+            total_valor += valor_diaria * presencas
+        
+        # Calcula valor considerando DSR
+        valor_unitario = diaria.valor if diaria.valor else None
+        valor_total_diaria = 0
+        eh_dsr = diaria.data.weekday() == 6
+        
+        if diaria.valor:
+            valor_para_calculo = diaria.valor
+            if eh_dsr:  # Domingo = DSR (dobro)
+                valor_para_calculo = valor_para_calculo * 2
+            valor_total_diaria = float(valor_para_calculo * presencas)
         
         result_diarias.append({
             "id": diaria.id,
@@ -80,8 +96,9 @@ def relatorio_diarias(
             "vagas": diaria.vagas,
             "inscricoes": inscricoes,
             "presencas": presencas,
-            "valor_unitario": float(diaria.valor) if diaria.valor else None,
-            "valor_total": float(diaria.valor * presencas) if diaria.valor else 0,  # Pagamento só para quem teve presença
+            "valor_unitario": float(valor_unitario) if valor_unitario else None,
+            "valor_total": valor_total_diaria,
+            "eh_dsr": eh_dsr,
             "supervisor": diaria.supervisor.nome if diaria.supervisor else None,
         })
     
@@ -146,15 +163,22 @@ def relatorio_presencas(
             }
         
         pessoas_presencas[pessoa.id]["total_presencas"] += 1
+        
+        # Calcula valor considerando DSR
+        valor_pagamento = diaria.valor
+        eh_dsr = diaria.data.weekday() == 6
         if diaria.valor:
-            pessoas_presencas[pessoa.id]["valor_total"] += diaria.valor
+            if eh_dsr:  # Domingo = DSR (dobro)
+                valor_pagamento = valor_pagamento * 2
+            pessoas_presencas[pessoa.id]["valor_total"] += valor_pagamento
         
         pessoas_presencas[pessoa.id]["diarias"].append({
             "diaria_id": diaria.id,
             "titulo": diaria.titulo,
             "data": str(diaria.data),
             "empresa": diaria.empresa.nome,
-            "valor": float(diaria.valor) if diaria.valor else None,
+            "valor": float(valor_pagamento) if valor_pagamento else None,
+            "eh_dsr": eh_dsr,
             "horario_registro": registro.horario_registro.isoformat(),
         })
     
@@ -218,9 +242,13 @@ def relatorio_por_empresa(
         empresas_stats[emp_id]["total_inscricoes"] += inscricoes
         empresas_stats[emp_id]["total_presencas"] += presencas
         
-        # Valor total apenas para quem teve presença
+        # Valor total apenas para quem teve presença (considerando DSR)
         if diaria.valor:
-            empresas_stats[emp_id]["valor_total"] += diaria.valor * presencas
+            valor_diaria = diaria.valor
+            # Verifica se é domingo (6 = Domingo) - DSR
+            if diaria.data.weekday() == 6:
+                valor_diaria = valor_diaria * 2
+            empresas_stats[emp_id]["valor_total"] += valor_diaria * presencas
     
     result = list(empresas_stats.values())
     for r in result:
