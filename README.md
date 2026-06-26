@@ -1,11 +1,12 @@
 # Alpha Backend - API FastAPI
 
-Sistema de gestão de diárias, colaboradores e transporte.
+Sistema de gestao de diarias, colaboradores, presencas e transporte fretado.
 
 ## Requisitos
 
 - Python 3.9+
-- PostgreSQL (Supabase)
+- PostgreSQL, local ou Supabase
+- MinIO/S3 compativel para upload de fotos, caso use presencas/fotos
 
 ## Setup
 
@@ -16,20 +17,30 @@ python -m venv venv
 # Ativar ambiente virtual
 # Windows:
 venv\Scripts\activate
+
 # Linux/Mac:
 source venv/bin/activate
 
-# Instalar dependências
+# Instalar dependencias
 pip install -r requirements.txt
 ```
 
-## Configuração
+## Configuracao
 
-Copie `.env.example` para `.env` e configure as variáveis:
+Copie `.env.example` para `.env` e configure as variaveis do seu ambiente:
 
 ```bash
 cp .env.example .env
 ```
+
+Variaveis importantes:
+
+- `DATABASE_URL`: connection string do PostgreSQL. Para Supabase, prefira o Session Pooler.
+- `SECRET_KEY`: chave forte para assinar tokens JWT.
+- `BACKEND_CORS_ORIGINS`: origens permitidas para o frontend.
+- `MINIO_*`: configuracao do storage S3 compativel.
+- `GOOGLE_MAPS_API_KEY`: usada no calculo de rotas, quando disponivel.
+- `EMAIL_*` e `RESEND_API_KEY`: usadas no fluxo de recuperacao de senha.
 
 ## Executar
 
@@ -37,22 +48,31 @@ cp .env.example .env
 uvicorn app.main:app --host=0.0.0.0 --reload
 ```
 
-API disponível em: http://localhost:8000
+API disponivel em: http://localhost:8000
 
-Documentação: http://localhost:8000/docs
+Documentacao: http://localhost:8000/docs
+
+Monitor de performance: http://localhost:8000/monitor
 
 ## Estrutura
 
+```text
+alpha-backend/
+|-- app/
+|   |-- api/v1/endpoints/  # Endpoints da API
+|   |-- core/              # Configuracao, autenticacao e permissoes
+|   |-- db/                # Sessao e base SQLAlchemy
+|   |-- models/            # Modelos SQLAlchemy
+|   |-- repositories/      # Acesso ao banco de dados
+|   |-- schemas/           # Schemas Pydantic
+|   |-- services/          # Regras de negocio e integracoes
+|   `-- main.py            # Ponto de entrada
+|-- deploy/                # Nginx, systemd e setup Ubuntu
+|-- requirements.txt
+|-- .env.example
+`-- README.md
 ```
-backend/
-├── app/
-│   ├── api/v1/endpoints/   # Endpoints da API
-│   ├── core/               # Configurações, autenticação
-│   ├── models/             # Modelos SQLAlchemy
-│   ├── schemas/            # Schemas Pydantic
-│   ├── services/           # Lógica de negócio
-│   └── main.py             # Ponto de entrada
-├── scripts/                # Scripts utilitários
-├── requirements.txt
-└── .env
-```
+
+## Deploy
+
+A pasta `deploy/` contem um script de setup para Ubuntu/Lightsail, alem de arquivos de Nginx e systemd. Revise o `.env` no servidor antes de iniciar o servico.

@@ -1,19 +1,18 @@
 from typing import List
 
-from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
-import os
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 
 
 class Settings(BaseSettings):
-    """Configurações da aplicação."""
+    """Configuracoes da aplicacao."""
 
-    PROJECT_NAME: str = "Sistema de Gestão de Pessoas"
+    PROJECT_NAME: str = "Sistema de Gestao de Pessoas"
     API_V1_STR: str = "/api/v1"
 
-    # Supabase Database
+    # Database
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/postgres"
 
     # CORS
@@ -27,26 +26,25 @@ class Settings(BaseSettings):
     ]
 
     # JWT
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str = "change-me-in-local-env"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # Google Maps API
-    GOOGLE_MAPS_API_KEY: str = "AIzaSyA758ldyTDqtomDirS2I-gtyvtv5_wVLkI"
+    GOOGLE_MAPS_API_KEY: str = ""
 
     # MinIO Storage (S3 Compatible)
     MINIO_ENDPOINT: str = "localhost:9000"
-    MINIO_ACCESS_KEY: str = "minio_admin"
-    MINIO_SECRET_KEY: str = "minio_secret"
+    MINIO_ACCESS_KEY: str = "minio_access_key"
+    MINIO_SECRET_KEY: str = "minio_secret_key"
     MINIO_BUCKET: str = "sgp-presencas"
-    MINIO_SECURE: bool = False  # True se usar HTTPS
-    MINIO_PUBLIC_URL: str = "http://localhost:9000"  # URL pública para acessar arquivos
+    MINIO_SECURE: bool = False
+    MINIO_PUBLIC_URL: str = "http://localhost:9000"
 
     class Config:
         env_file = ".env"
         case_sensitive = True
-        extra = "ignore"  # Ignora variáveis extras no .env
+        extra = "ignore"
 
 
 settings = Settings()
-
