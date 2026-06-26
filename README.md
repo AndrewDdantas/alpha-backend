@@ -42,6 +42,44 @@ Variaveis importantes:
 - `GOOGLE_MAPS_API_KEY`: usada no calculo de rotas, quando disponivel.
 - `EMAIL_*` e `RESEND_API_KEY`: usadas no fluxo de recuperacao de senha.
 
+## Infra local com Docker
+
+O `docker-compose.yml` usa o mesmo `.env` do projeto para subir Postgres e MinIO.
+Com a configuracao padrao do `.env.example`, a API roda localmente na maquina e
+acessa os servicos via `localhost`.
+
+```bash
+# Se ainda nao existir .env
+cp .env.example .env
+
+# Subir banco e storage
+docker compose up -d
+
+# Ver status dos servicos
+docker compose ps
+
+# Aplicar migrations no banco local
+alembic upgrade head
+```
+
+Servicos locais:
+
+- Postgres: `localhost:5432`
+- MinIO API: http://localhost:9000
+- MinIO Console: http://localhost:9001
+
+Para parar os servicos:
+
+```bash
+docker compose down
+```
+
+Para remover tambem os dados persistidos em volumes:
+
+```bash
+docker compose down -v
+```
+
 ## Executar
 
 ```bash
