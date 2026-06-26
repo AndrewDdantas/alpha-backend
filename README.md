@@ -35,7 +35,8 @@ cp .env.example .env
 
 Variaveis importantes:
 
-- `DATABASE_URL`: connection string do PostgreSQL. Para Supabase, prefira o Session Pooler.
+- `POSTGRES_*`: dados usados para montar a connection string local do PostgreSQL.
+- `DATABASE_URL`: override opcional da connection string. Para Supabase, prefira o Session Pooler.
 - `SECRET_KEY`: chave forte para assinar tokens JWT.
 - `BACKEND_CORS_ORIGINS`: origens permitidas para o frontend.
 - `MINIO_*`: configuracao do storage S3 compativel.
@@ -64,7 +65,7 @@ alembic upgrade head
 
 Servicos locais:
 
-- Postgres: `localhost:5432`
+- Postgres: `localhost:${POSTGRES_PORT}`
 - MinIO API: http://localhost:9000
 - MinIO Console: http://localhost:9001
 
