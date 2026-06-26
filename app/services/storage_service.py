@@ -3,6 +3,10 @@ import base64
 from datetime import datetime
 import uuid
 
+import boto3
+from botocore.client import Config
+from botocore.exceptions import BotoCoreError, ClientError
+
 from app.core.config import settings
 
 
@@ -26,13 +30,6 @@ class StorageService:
         if not settings.MINIO_ENDPOINT or not settings.MINIO_ACCESS_KEY or not settings.MINIO_SECRET_KEY:
             raise StorageServiceError("Storage nao configurado. Verifique as variaveis MINIO_*.")
 
-        try:
-            import boto3
-            from botocore.client import Config
-            from botocore.exceptions import BotoCoreError, ClientError
-        except ImportError as exc:
-            raise StorageServiceError("Dependencias de storage nao instaladas. Instale boto3/botocore.") from exc
-
         protocol = "https" if settings.MINIO_SECURE else "http"
         endpoint_url = f"{protocol}://{settings.MINIO_ENDPOINT}"
 
@@ -53,11 +50,6 @@ class StorageService:
     def _ensure_bucket_exists(self):
         """Cria o bucket se ele nao existir."""
         client = self._get_client()
-
-        try:
-            from botocore.exceptions import BotoCoreError, ClientError
-        except ImportError as exc:
-            raise StorageServiceError("Dependencias de storage nao instaladas. Instale boto3/botocore.") from exc
 
         try:
             client.head_bucket(Bucket=self.bucket)
@@ -91,11 +83,6 @@ class StorageService:
     ) -> str:
         self._ensure_bucket_exists()
         foto_bytes = self._decode_base64(foto_base64)
-
-        try:
-            from botocore.exceptions import BotoCoreError, ClientError
-        except ImportError as exc:
-            raise StorageServiceError("Dependencias de storage nao instaladas. Instale boto3/botocore.") from exc
 
         try:
             self._get_client().put_object(
@@ -140,12 +127,6 @@ class StorageService:
 
     def delete_file(self, file_path: str) -> bool:
         """Deleta um arquivo do bucket."""
-        try:
-            from botocore.exceptions import BotoCoreError, ClientError
-        except ImportError as exc:
-            print(f"Erro ao deletar arquivo: {exc}")
-            return False
-
         try:
             self._get_client().delete_object(Bucket=self.bucket, Key=file_path)
             return True
