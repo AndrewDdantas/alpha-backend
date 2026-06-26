@@ -54,6 +54,25 @@ Documentacao: http://localhost:8000/docs
 
 Monitor de performance: http://localhost:8000/monitor
 
+## Migrations
+
+O projeto usa Alembic para versionar o schema do banco.
+
+```bash
+# Aplicar migrations pendentes
+alembic upgrade head
+
+# Criar uma nova migration a partir dos models
+alembic revision --autogenerate -m "descricao da alteracao"
+```
+
+Se o banco ja existir com esse schema, valide a compatibilidade antes e marque a
+baseline sem recriar tabelas:
+
+```bash
+alembic stamp head
+```
+
 ## Estrutura
 
 ```text
