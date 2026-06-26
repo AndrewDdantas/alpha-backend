@@ -26,6 +26,7 @@ httpx>=0.24.0
 # Utils
 python-dotenv>=1.0.0
 overpy>=0.2.0
+pytest>=8.0.0
 
 # Email
 resend>=0.8.0

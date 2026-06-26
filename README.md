@@ -73,6 +73,12 @@ baseline sem recriar tabelas:
 alembic stamp head
 ```
 
+## Testes
+
+```bash
+pytest
+```
+
 ## Estrutura
 
 ```text
