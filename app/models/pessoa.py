@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum as SqlEn
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
-from app.models.enums import TipoPessoa
+from app.models.enums import TipoPessoa, enum_values
 from app.models.perfil import pessoa_perfil
 
 
@@ -25,7 +25,11 @@ class Pessoa(Base):
     estado = Column(String(2), nullable=True)
     cep = Column(String(10), nullable=True)
     senha_hash = Column(String(255), nullable=True)
-    tipo_pessoa = Column(SqlEnum(TipoPessoa), default=TipoPessoa.COLABORADOR, nullable=False)
+    tipo_pessoa = Column(
+        SqlEnum(TipoPessoa, values_callable=enum_values, name="tipopessoa"),
+        default=TipoPessoa.COLABORADOR,
+        nullable=False,
+    )
     ativo = Column(Boolean, default=True)
     foto_url = Column(String(500), nullable=True)  # URL da foto de perfil
     

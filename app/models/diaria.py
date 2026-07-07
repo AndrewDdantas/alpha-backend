@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Enum as SqlEnum
 
 from app.db.base import Base
-from app.models.enums import StatusDiaria, StatusInscricao
+from app.models.enums import StatusDiaria, StatusInscricao, enum_values
 
 
 class Diaria(Base):
@@ -22,7 +22,11 @@ class Diaria(Base):
     valor = Column(Numeric(10, 2), nullable=True)  # Valor da diária
     local = Column(String(255), nullable=True)
     observacoes = Column(Text, nullable=True)
-    status = Column(SqlEnum(StatusDiaria), default=StatusDiaria.ABERTA, nullable=False)
+    status = Column(
+        SqlEnum(StatusDiaria, values_callable=enum_values, name="statusdiaria"),
+        default=StatusDiaria.ABERTA,
+        nullable=False,
+    )
     criado_em = Column(DateTime, default=datetime.utcnow)
     atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -48,7 +52,11 @@ class Inscricao(Base):
     __tablename__ = "inscricoes"
 
     id = Column(Integer, primary_key=True, index=True)
-    status = Column(SqlEnum(StatusInscricao), default=StatusInscricao.PENDENTE, nullable=False)
+    status = Column(
+        SqlEnum(StatusInscricao, values_callable=enum_values, name="statusinscricao"),
+        default=StatusInscricao.PENDENTE,
+        nullable=False,
+    )
     observacao = Column(Text, nullable=True)
     criado_em = Column(DateTime, default=datetime.utcnow)
     atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

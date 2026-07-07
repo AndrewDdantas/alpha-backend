@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Type
 
 
 class TipoPessoa(str, Enum):
@@ -28,4 +29,9 @@ class StatusInscricao(str, Enum):
     REJEITADA = "rejeitada"     # Inscrição rejeitada pelo admin
     CONCLUIDA = "concluida"     # Colaborador completou a diária
     FALTA = "falta"             # Falta - sem presença confirmada
+
+
+def enum_values(enum_cls: Type[Enum]) -> list[str]:
+    """Retorna os valores persistidos no PostgreSQL (lowercase)."""
+    return [member.value for member in enum_cls]
 
