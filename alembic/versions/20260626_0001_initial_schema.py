@@ -16,22 +16,22 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-tipo_pessoa_enum = sa.Enum("COLABORADOR", "SUPERVISOR", "ADMIN", name="tipopessoa")
+tipo_pessoa_enum = sa.Enum("colaborador", "supervisor", "admin", name="tipopessoa")
 status_diaria_enum = sa.Enum(
-    "ABERTA",
-    "FECHADA",
-    "EM_ANDAMENTO",
-    "CONCLUIDA",
-    "CANCELADA",
+    "aberta",
+    "fechada",
+    "em_andamento",
+    "concluida",
+    "cancelada",
     name="statusdiaria",
 )
 status_inscricao_enum = sa.Enum(
-    "PENDENTE",
-    "CONFIRMADA",
-    "CANCELADA",
-    "REJEITADA",
-    "CONCLUIDA",
-    "FALTA",
+    "pendente",
+    "confirmada",
+    "cancelada",
+    "rejeitada",
+    "concluida",
+    "falta",
     name="statusinscricao",
 )
 

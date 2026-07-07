@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 
 class RegistroPresencaBase(BaseModel):
@@ -33,6 +33,14 @@ class RegistroPresencaResponse(RegistroPresencaBase):
     pessoa_nome: Optional[str] = None
     pessoa_id: Optional[int] = None
 
+    @field_serializer("foto_url")
+    def serialize_foto_url(self, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return value
+        from app.services.storage_service import storage_service
+
+        return storage_service.resolve_access_url(value)
+
     class Config:
         from_attributes = True
 
@@ -48,6 +56,14 @@ class InscritoPresenca(BaseModel):
     presenca_registrada: bool = False
     horario_registro: Optional[datetime] = None
     foto_url: Optional[str] = None
+
+    @field_serializer("foto_url")
+    def serialize_foto_url(self, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return value
+        from app.services.storage_service import storage_service
+
+        return storage_service.resolve_access_url(value)
 
 
 class PresencaDiariaResponse(BaseModel):

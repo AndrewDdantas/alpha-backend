@@ -161,6 +161,19 @@ def user_has_any_permission(user: Pessoa, codigos_permissoes: List[str]) -> bool
     return any(user_has_permission(user, codigo) for codigo in codigos_permissoes)
 
 
+def user_is_admin(user: Pessoa) -> bool:
+    """Verifica se o usuário é administrador."""
+    if user_has_perfil(user, "ADMINISTRADOR"):
+        return True
+
+    user_role = (
+        user.tipo_pessoa.value
+        if hasattr(user.tipo_pessoa, "value")
+        else user.tipo_pessoa
+    )
+    return user_role == TipoPessoa.ADMIN.value
+
+
 def user_is_admin_or_supervisor(user: Pessoa) -> bool:
     """
     Verifica se usuário é admin ou supervisor.

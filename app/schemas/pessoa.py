@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from typing import Optional, List
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_serializer
 
 from app.models.enums import TipoPessoa
 
@@ -74,6 +74,14 @@ class PessoaResponse(PessoaBase):
     foto_url: Optional[str] = None
     criado_em: datetime
     atualizado_em: datetime
+
+    @field_serializer("foto_url")
+    def serialize_foto_url(self, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return value
+        from app.services.storage_service import storage_service
+
+        return storage_service.resolve_access_url(value)
 
     class Config:
         from_attributes = True

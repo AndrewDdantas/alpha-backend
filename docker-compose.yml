@@ -43,7 +43,7 @@ services:
         sleep 2;
       done;
       mc mb --ignore-existing local/${MINIO_BUCKET};
-      mc anonymous set download local/${MINIO_BUCKET};
+      echo 'Bucket criado (acesso privado - use URLs presigned em producao)';
       "
     restart: "no"
 

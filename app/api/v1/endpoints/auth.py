@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import get_db
+from app.core.rate_limit import rate_limit_auth
 from app.core.security import verify_password, create_access_token, get_password_hash
+from app.core.user_checks import assert_user_not_blocked
 from app.repositories.pessoa_repository import PessoaRepository
 from app.repositories.rota_repository import PontoParadaRepository
 from app.schemas.token import Token
@@ -22,6 +24,7 @@ router = APIRouter()
 def registro(
     dados: RegistroUsuario,
     db: Session = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     """
     Registra um novo usuário no sistema.
@@ -62,15 +65,10 @@ def registro(
             )
 
     # Cria o usuário
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Registro payload - Nome: {dados.nome}, CPF: {dados.cpf}, PIS: {dados.pis}")
-
     if not dados.pis:
-        logger.error(f"Tentativa de registro sem PIS! Dados: {dados}")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="O campo PIS é obrigatório e não foi recebido corretamente."
+            detail="O campo PIS é obrigatório e não foi recebido corretamente.",
         )
 
     from app.schemas.pessoa import PessoaCreate
@@ -83,6 +81,10 @@ def registro(
         senha=dados.senha,
         ponto_parada_id=dados.ponto_parada_id,
         foto_url=dados.foto_url,
+        cep=dados.cep,
+        endereco=dados.endereco,
+        cidade=dados.cidade,
+        estado=dados.estado,
     )
 
     nova_pessoa = repository.create(pessoa_data)
@@ -102,7 +104,10 @@ from app.services.storage_service import storage_service
 import hashlib
 
 @router.post("/upload-foto-registro")
-def upload_foto_registro(dados: FotoRegistroUpload):
+def upload_foto_registro(
+    dados: FotoRegistroUpload,
+    _: None = Depends(rate_limit_auth),
+):
     """
     Faz upload de foto de perfil durante o registro.
     Rota pública - usa CPF (hasheado) como identificador temporário.
@@ -113,11 +118,14 @@ def upload_foto_registro(dados: FotoRegistroUpload):
         
         url = storage_service.upload_perfil_foto(
             foto_base64=dados.foto_base64,
-            pessoa_id=int(cpf_hash, 16) % 100000,  # Converte para número
+            pessoa_id=int(cpf_hash, 16) % 100000,
             content_type=dados.content_type,
         )
-        
-        return {"url": url, "message": "Foto enviada com sucesso!"}
+
+        return {
+            "url": storage_service.resolve_access_url(url),
+            "message": "Foto enviada com sucesso!",
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -129,6 +137,7 @@ def upload_foto_registro(dados: FotoRegistroUpload):
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     """Realiza login e retorna token de acesso."""
     repository = PessoaRepository(db)
@@ -153,6 +162,8 @@ def login(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Usuário inativo",
         )
+
+    assert_user_not_blocked(user)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
@@ -183,6 +194,7 @@ def login(
 def esqueci_senha(
     dados: SolicitarResetSenha,
     db: Session = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     """
     Solicita reset de senha.
@@ -225,6 +237,7 @@ def esqueci_senha(
 def redefinir_senha(
     dados: RedefinirSenha,
     db: Session = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     """
     Redefine senha usando token recebido por email.

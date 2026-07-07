@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.user_checks import assert_user_can_access
 from app.db.session import SessionLocal
 from app.models.pessoa import Pessoa
 
@@ -42,4 +43,6 @@ async def get_current_user(
     user = db.query(Pessoa).filter(Pessoa.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
+
+    assert_user_can_access(user)
     return user

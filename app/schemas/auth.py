@@ -12,8 +12,12 @@ class RegistroUsuario(BaseModel):
     pis: str  # PIS/PASEP obrigatório
     telefone: Optional[str] = None
     senha: str
-    ponto_parada_id: Optional[int] = None  # Ponto de embarque do fretado
-    foto_url: Optional[str] = None  # URL da foto de perfil (após upload)
+    ponto_parada_id: Optional[int] = None
+    foto_url: Optional[str] = None
+    cep: Optional[str] = None
+    endereco: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
 
     @field_validator("nome")
     @classmethod

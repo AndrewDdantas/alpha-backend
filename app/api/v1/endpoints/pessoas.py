@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db
-from app.core.permissions import require_authenticated, require_admin
+from app.core.permissions import require_authenticated, require_admin, user_is_admin
 from app.models.pessoa import Pessoa
 from app.models.diaria import Inscricao, Diaria
 from app.models.enums import TipoPessoa
@@ -64,7 +64,7 @@ def upload_foto_perfil(
         current_user.foto_url = url
         db.commit()
         
-        return {"url": url, "message": "Foto atualizada com sucesso!"}
+        return {"url": storage_service.resolve_access_url(url), "message": "Foto atualizada com sucesso!"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -110,8 +110,15 @@ def list_pessoas(
 def get_pessoa(
     pessoa_id: int,
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_authenticated()),
 ):
-    """Busca uma pessoa pelo ID."""
+    """Busca uma pessoa pelo ID (admin ou próprio usuário)."""
+    if pessoa_id != current_user.id and not user_is_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para acessar este recurso",
+        )
+
     service = PessoaService(db)
     return service.get_pessoa(pessoa_id)
 
@@ -120,8 +127,9 @@ def get_pessoa(
 def create_pessoa(
     pessoa_data: PessoaCreate,
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
 ):
-    """Cria uma nova pessoa."""
+    """Cria uma nova pessoa (admin)."""
     service = PessoaService(db)
     return service.create_pessoa(pessoa_data)
 

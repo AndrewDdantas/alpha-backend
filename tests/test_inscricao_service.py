@@ -115,7 +115,7 @@ def test_inscrever_rejeita_pessoa_bloqueada(db_session):
     with pytest.raises(HTTPException) as exc_info:
         service.inscrever(pessoa.id, InscricaoCreate(diaria_id=diaria.id))
 
-    assert_http_error(exc_info, 403, "bloqueado")
+    assert_http_error(exc_info, 403, "bloqueada")
 
 
 def test_inscrever_rejeita_inscricao_duplicada_ativa(db_session):

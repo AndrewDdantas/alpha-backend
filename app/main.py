@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -7,6 +7,7 @@ import logging
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.monitoring import require_metrics_access
 from app.services.metrics_service import metrics_service
 
 # Logger para performance
@@ -92,7 +93,7 @@ async def root():
 from fastapi.responses import HTMLResponse
 
 @app.get("/monitor", response_class=HTMLResponse, tags=["Monitoring"])
-async def monitor_dashboard():
+async def monitor_dashboard(_: None = Depends(require_metrics_access)):
     """Dashboard visual de monitoramento da API."""
     overview = metrics_service.get_overview()
     endpoints = metrics_service.get_endpoint_stats()
@@ -201,7 +202,7 @@ async def monitor_dashboard():
 
 
 @app.get("/api/v1/metrics", tags=["Monitoring"])
-async def get_metrics():
+async def get_metrics(_: None = Depends(require_metrics_access)):
     """Retorna métricas de performance da API."""
     return {
         "overview": metrics_service.get_overview(),
@@ -212,13 +213,13 @@ async def get_metrics():
 
 
 @app.get("/api/v1/metrics/overview", tags=["Monitoring"])
-async def get_metrics_overview():
+async def get_metrics_overview(_: None = Depends(require_metrics_access)):
     """Retorna visão geral das métricas."""
     return metrics_service.get_overview()
 
 
 @app.get("/api/v1/metrics/endpoints", tags=["Monitoring"])
-async def get_metrics_endpoints():
+async def get_metrics_endpoints(_: None = Depends(require_metrics_access)):
     """Retorna estatísticas por endpoint."""
     return metrics_service.get_endpoint_stats()
 

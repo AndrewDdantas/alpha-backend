@@ -15,6 +15,7 @@ def list_veiculos(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
 ):
     """Lista todos os veículos ativos."""
     service = VeiculoService(db)
@@ -24,6 +25,7 @@ def list_veiculos(
 @router.get("/capacidade")
 def get_capacidade_total(
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
 ):
     """Retorna a capacidade total da frota."""
     service = VeiculoService(db)
@@ -35,6 +37,7 @@ def get_capacidade_total(
 def calcular_veiculos(
     num_passageiros: int,
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
 ):
     """
     Calcula quantos veículos são necessários para X passageiros.
@@ -48,6 +51,7 @@ def calcular_veiculos(
 def listar_alocacoes_veiculo(
     veiculo_id: int,
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
 ):
     """Lista todas as diárias em que o veículo foi/está alocado."""
     from app.models.alocacao import AlocacaoDiaria
@@ -87,6 +91,7 @@ def listar_alocacoes_veiculo(
 def get_veiculo(
     veiculo_id: int,
     db: Session = Depends(get_db),
+    current_user: Pessoa = Depends(require_admin()),
 ):
     """Busca um veículo por ID."""
     service = VeiculoService(db)

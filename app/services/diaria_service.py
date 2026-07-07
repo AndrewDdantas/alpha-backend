@@ -117,17 +117,14 @@ class InscricaoService:
         """Inscreve colaborador em uma diária."""
         from datetime import datetime, timedelta
         from app.repositories.pessoa_repository import PessoaRepository
+        from app.core.user_checks import assert_user_not_blocked
 
         # Verifica se pessoa está bloqueada
         pessoa_repo = PessoaRepository(self.repository.db)
         pessoa = pessoa_repo.get_by_id(pessoa_id)
-        
-        if pessoa and pessoa.bloqueado and pessoa.bloqueado_ate:
-            if pessoa.bloqueado_ate >= date.today():
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Você está bloqueado até {pessoa.bloqueado_ate.strftime('%d/%m/%Y')}. Motivo: {pessoa.motivo_bloqueio or 'Falta em diária anterior'}",
-                )
+
+        if pessoa:
+            assert_user_not_blocked(pessoa)
 
         diaria = self.diaria_repository.get_by_id_with_inscricoes(inscricao_data.diaria_id)
 

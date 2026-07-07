@@ -1,6 +1,7 @@
 """Servico de armazenamento de arquivos usando MinIO/S3 compatible."""
 import base64
 from datetime import datetime
+from typing import Optional
 import uuid
 
 import boto3
@@ -94,7 +95,35 @@ class StorageService:
         except (BotoCoreError, ClientError) as exc:
             raise StorageServiceError(f"Erro ao enviar arquivo para storage: {exc}") from exc
 
-        return f"{self.public_url}/{self.bucket}/{filename}"
+        return filename
+
+    def _extract_object_key(self, stored: str) -> str:
+        """Extrai a chave do objeto a partir de URL completa ou chave relativa."""
+        if stored.startswith("http://") or stored.startswith("https://"):
+            marker = f"/{self.bucket}/"
+            if marker in stored:
+                return stored.split(marker, 1)[1]
+            return stored.rsplit("/", 1)[-1]
+        return stored
+
+    def resolve_access_url(self, stored: Optional[str]) -> Optional[str]:
+        """Retorna URL pública ou presigned conforme configuração."""
+        if not stored:
+            return stored
+
+        key = self._extract_object_key(stored)
+
+        if settings.MINIO_USE_PRESIGNED_URLS or settings.is_production:
+            try:
+                return self._get_client().generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": self.bucket, "Key": key},
+                    ExpiresIn=settings.MINIO_PRESIGNED_EXPIRES_SECONDS,
+                )
+            except (BotoCoreError, ClientError) as exc:
+                raise StorageServiceError(f"Erro ao gerar URL de acesso: {exc}") from exc
+
+        return f"{self.public_url}/{self.bucket}/{key}"
 
     def upload_presenca_foto(
         self,

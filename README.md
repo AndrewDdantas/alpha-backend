@@ -38,6 +38,7 @@ Variaveis importantes:
 - `POSTGRES_*`: dados usados para montar a connection string local do PostgreSQL.
 - `DATABASE_URL`: override opcional da connection string. Para Supabase, prefira o Session Pooler.
 - `SECRET_KEY`: chave forte para assinar tokens JWT.
+- `MASTER_ADMIN_*`: dados usados pelo bootstrap da conta master/admin inicial.
 - `BACKEND_CORS_ORIGINS`: origens permitidas para o frontend.
 - `MINIO_*`: configuracao do storage S3 compativel.
 - `GOOGLE_MAPS_API_KEY`: usada no calculo de rotas, quando disponivel.
@@ -61,6 +62,9 @@ docker compose ps
 
 # Aplicar migrations no banco local
 alembic upgrade head
+
+# Criar ou atualizar a conta master/admin inicial
+python -m app.scripts.create_admin
 ```
 
 Servicos locais:

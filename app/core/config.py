@@ -2,10 +2,15 @@ from typing import List, Optional
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 load_dotenv()
+
+INSECURE_SECRET_KEYS = {
+    "change-me-in-local-env",
+    "troque-esta-chave-em-producao",
+}
 
 
 class Settings(BaseSettings):
@@ -13,6 +18,7 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "Sistema de Gestao de Pessoas"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = "development"
 
     # Database
     DATABASE_URL_OVERRIDE: Optional[str] = Field(default=None, validation_alias="DATABASE_URL")
@@ -47,6 +53,26 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "sgp-presencas"
     MINIO_SECURE: bool = False
     MINIO_PUBLIC_URL: str = "http://localhost:9000"
+    MINIO_USE_PRESIGNED_URLS: bool = False
+    MINIO_PRESIGNED_EXPIRES_SECONDS: int = 3600
+
+    # Monitoramento
+    METRICS_API_KEY: Optional[str] = None
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.lower() == "production"
+
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        if self.is_production and self.SECRET_KEY in INSECURE_SECRET_KEYS:
+            raise ValueError(
+                "SECRET_KEY insegura para producao. "
+                "Defina uma chave forte via variavel de ambiente."
+            )
+        if self.is_production:
+            self.MINIO_USE_PRESIGNED_URLS = True
+        return self
 
     @property
     def DATABASE_URL(self) -> str:
