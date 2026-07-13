@@ -47,8 +47,8 @@ def registro(
             detail="CPF já cadastrado",
         )
 
-    # Verifica se PIS já existe
-    if repository.get_by_pis(dados.pis):
+    # Verifica se PIS já existe (apenas quando informado)
+    if dados.pis and repository.get_by_pis(dados.pis):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="PIS já cadastrado",
@@ -63,13 +63,6 @@ def registro(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Ponto de parada não encontrado",
             )
-
-    # Cria o usuário
-    if not dados.pis:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="O campo PIS é obrigatório e não foi recebido corretamente.",
-        )
 
     from app.schemas.pessoa import PessoaCreate
     pessoa_data = PessoaCreate(

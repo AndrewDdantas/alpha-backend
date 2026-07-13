@@ -12,7 +12,7 @@ class PessoaBase(BaseModel):
     nome: str
     email: EmailStr
     cpf: str
-    pis: str  # PIS/PASEP obrigatório
+    pis: Optional[str] = None
     telefone: Optional[str] = None
     data_nascimento: Optional[datetime] = None
     endereco: Optional[str] = None

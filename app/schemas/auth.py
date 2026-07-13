@@ -9,7 +9,7 @@ class RegistroUsuario(BaseModel):
     nome: str
     email: EmailStr
     cpf: str
-    pis: str  # PIS/PASEP obrigatório
+    pis: Optional[str] = None
     telefone: Optional[str] = None
     senha: str
     ponto_parada_id: Optional[int] = None
@@ -34,6 +34,14 @@ class RegistroUsuario(BaseModel):
         if len(cpf) != 11:
             raise ValueError("CPF deve ter 11 dígitos")
         return cpf
+
+    @field_validator("pis")
+    @classmethod
+    def pis_opcional(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        pis = v.strip()
+        return pis or None
 
     @field_validator("senha")
     @classmethod
