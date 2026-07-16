@@ -18,6 +18,8 @@ class Pessoa(Base):
     cpf = Column(String(14), unique=True, index=True, nullable=False)
     pis = Column(String(14), unique=True, index=True, nullable=True)  # PIS/PASEP opcional
     telefone = Column(String(20), nullable=True)
+    # JID resolvido via Baileys onWhatsApp (ex: 5511...@s.whatsapp.net ou ...@lid)
+    whatsapp_jid = Column(String(80), nullable=True, index=True)
     data_nascimento = Column(DateTime, nullable=True)
     endereco = Column(String(255), nullable=True)
     complemento = Column(String(100), nullable=True)  # Complemento do endereço

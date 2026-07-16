@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
@@ -12,6 +12,7 @@ from app.schemas.diaria import (
     InscricaoCreate, InscricaoResponse, InscricaoComPessoa, MinhaInscricao, InscricaoManual,
 )
 from app.services.diaria_service import DiariaService, InscricaoService
+from app.services.whatsapp_notification_service import notify_diaria_background
 
 router = APIRouter()
 
@@ -35,12 +36,15 @@ def list_diarias(
 @router.post("/", response_model=DiariaResponse, status_code=status.HTTP_201_CREATED)
 def create_diaria(
     diaria_data: DiariaCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Pessoa = Depends(require_admin()),
 ):
-    """Cria uma nova diária (admin)."""
+    """Cria uma nova diária (admin) e notifica colaboradores via WhatsApp em background."""
     service = DiariaService(db)
-    return service.create_diaria(diaria_data)
+    diaria = service.create_diaria(diaria_data)
+    background_tasks.add_task(notify_diaria_background, diaria.id)
+    return diaria
 
 
 @router.get("/disponiveis", response_model=DiariaList)

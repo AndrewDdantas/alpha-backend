@@ -43,6 +43,33 @@ Variaveis importantes:
 - `MINIO_*`: configuracao do storage S3 compativel.
 - `GOOGLE_MAPS_API_KEY`: usada no calculo de rotas, quando disponivel.
 - `EMAIL_*` e `RESEND_API_KEY`: usadas no fluxo de recuperacao de senha.
+- `WHATSAPP_ENABLED`, `WHATSAPP_SERVICE_URL`, `WHATSAPP_SERVICE_TOKEN`: notificacoes via Baileys (servico em `../whatsapp-service`).
+
+## WhatsApp (Baileys)
+
+O envio de mensagens roda em um servico Node separado (`Alpha/whatsapp-service`).
+
+```bash
+# Em outro terminal
+cd ../whatsapp-service
+cp .env.example .env
+npm install
+npm run dev
+```
+
+No `.env` do backend:
+
+```env
+WHATSAPP_ENABLED=true
+WHATSAPP_SERVICE_URL=http://localhost:3100
+WHATSAPP_SERVICE_TOKEN=change-me-whatsapp-token
+```
+
+No admin do frontend: **Cadastro → WhatsApp** para escanear o QR.
+Ao criar uma diaria, colaboradores ativos com telefone sao notificados em background.
+Tambem ha botao de reenvio manual em **Cadastro → Diarias**.
+
+Opcionalmente, o servico sobe com `docker compose` (service `whatsapp`, porta 3100, volume `whatsapp_auth`).
 
 ## Infra local com Docker
 

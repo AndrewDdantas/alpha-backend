@@ -72,6 +72,7 @@ class PessoaResponse(PessoaBase):
     bloqueado_ate: Optional[date] = None
     ponto_parada_id: Optional[int] = None
     foto_url: Optional[str] = None
+    whatsapp_jid: Optional[str] = None
     criado_em: datetime
     atualizado_em: datetime
 
