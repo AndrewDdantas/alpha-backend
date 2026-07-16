@@ -56,7 +56,8 @@ services:
       PORT: 3100
       WHATSAPP_SERVICE_TOKEN: ${WHATSAPP_SERVICE_TOKEN:-change-me-whatsapp-token}
       AUTH_DIR: /app/auth_info
-      SEND_DELAY_MS: ${WHATSAPP_SEND_DELAY_MS:-800}
+      SEND_DELAY_MIN_MS: ${WHATSAPP_SEND_DELAY_MIN_MS:-3000}
+      SEND_DELAY_MAX_MS: ${WHATSAPP_SEND_DELAY_MAX_MS:-5000}
     ports:
       - "${WHATSAPP_PORT:-3100}:3100"
     volumes:
