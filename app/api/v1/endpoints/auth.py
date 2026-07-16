@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.schemas.token import Token
 from app.schemas.pessoa import PessoaResponse
 from app.schemas.auth import RegistroUsuario, SolicitarResetSenha, RedefinirSenha
 from app.services.email_service import email_service
+from app.services.whatsapp_jid_sync import sync_whatsapp_jid_background
 
 router = APIRouter()
 
@@ -23,6 +24,7 @@ router = APIRouter()
 @router.post("/registro", response_model=PessoaResponse, status_code=status.HTTP_201_CREATED)
 def registro(
     dados: RegistroUsuario,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_auth),
 ):
@@ -81,6 +83,8 @@ def registro(
     )
 
     nova_pessoa = repository.create(pessoa_data)
+    if nova_pessoa.telefone:
+        background_tasks.add_task(sync_whatsapp_jid_background, nova_pessoa.id)
     return nova_pessoa
 
 

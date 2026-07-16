@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, status, Query, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db
@@ -9,6 +9,7 @@ from app.models.diaria import Inscricao, Diaria
 from app.models.enums import TipoPessoa
 from app.schemas.pessoa import PessoaCreate, PessoaUpdate, PessoaResponse, PessoaList, PerfilUpdate, BloquearPessoa
 from app.services.pessoa_service import PessoaService
+from app.services.whatsapp_jid_sync import sync_whatsapp_jid_background
 
 router = APIRouter()
 
@@ -26,6 +27,7 @@ def get_meu_perfil(
 @router.put("/me", response_model=PessoaResponse)
 def update_meu_perfil(
     perfil_data: PerfilUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Pessoa = Depends(require_authenticated()),
 ):
@@ -33,7 +35,17 @@ def update_meu_perfil(
     Apenas telefone, ponto de parada e foto podem ser alterados.
     """
     service = PessoaService(db)
-    return service.update_perfil(current_user.id, perfil_data)
+    telefone_antes = current_user.telefone
+    updated = service.update_perfil(current_user.id, perfil_data)
+    if updated.telefone and updated.telefone != telefone_antes:
+        # limpa jid antigo e resolve de novo
+        updated.whatsapp_jid = None
+        db.commit()
+        background_tasks.add_task(sync_whatsapp_jid_background, updated.id)
+    elif not updated.telefone and telefone_antes:
+        updated.whatsapp_jid = None
+        db.commit()
+    return updated
 
 
 from pydantic import BaseModel as PydanticBaseModel
@@ -126,24 +138,40 @@ def get_pessoa(
 @router.post("/", response_model=PessoaResponse, status_code=status.HTTP_201_CREATED)
 def create_pessoa(
     pessoa_data: PessoaCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Pessoa = Depends(require_admin()),
 ):
     """Cria uma nova pessoa (admin)."""
     service = PessoaService(db)
-    return service.create_pessoa(pessoa_data)
+    pessoa = service.create_pessoa(pessoa_data)
+    if pessoa.telefone:
+        background_tasks.add_task(sync_whatsapp_jid_background, pessoa.id)
+    return pessoa
 
 
 @router.put("/{pessoa_id}", response_model=PessoaResponse)
 def update_pessoa(
     pessoa_id: int,
     pessoa_data: PessoaUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Pessoa = Depends(require_admin()),
 ):
     """Atualiza uma pessoa existente."""
     service = PessoaService(db)
-    return service.update_pessoa(pessoa_id, pessoa_data)
+    pessoa_antes = service.get_pessoa(pessoa_id)
+    telefone_antes = pessoa_antes.telefone
+    updated = service.update_pessoa(pessoa_id, pessoa_data)
+    if "telefone" in pessoa_data.model_dump(exclude_unset=True):
+        if updated.telefone and updated.telefone != telefone_antes:
+            updated.whatsapp_jid = None
+            db.commit()
+            background_tasks.add_task(sync_whatsapp_jid_background, updated.id)
+        elif not updated.telefone:
+            updated.whatsapp_jid = None
+            db.commit()
+    return updated
 
 
 @router.delete("/{pessoa_id}", status_code=status.HTTP_204_NO_CONTENT)

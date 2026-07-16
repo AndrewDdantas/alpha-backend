@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     # Monitoramento
     METRICS_API_KEY: Optional[str] = None
 
+    # WhatsApp (serviço Baileys)
+    WHATSAPP_ENABLED: bool = False
+    WHATSAPP_SERVICE_URL: str = "http://localhost:3100"
+    WHATSAPP_SERVICE_TOKEN: str = "change-me-whatsapp-token"
+
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() == "production"

@@ -47,6 +47,22 @@ services:
       "
     restart: "no"
 
+  whatsapp:
+    build:
+      context: ../whatsapp-service
+    container_name: alpha-whatsapp
+    restart: unless-stopped
+    environment:
+      PORT: 3100
+      WHATSAPP_SERVICE_TOKEN: ${WHATSAPP_SERVICE_TOKEN:-change-me-whatsapp-token}
+      AUTH_DIR: /app/auth_info
+      SEND_DELAY_MS: ${WHATSAPP_SEND_DELAY_MS:-800}
+    ports:
+      - "${WHATSAPP_PORT:-3100}:3100"
+    volumes:
+      - whatsapp_auth:/app/auth_info
+
 volumes:
   postgres_data:
   minio_data:
+  whatsapp_auth:
