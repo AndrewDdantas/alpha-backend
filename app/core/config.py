@@ -61,7 +61,7 @@ class Settings(BaseSettings):
 
     # WhatsApp (serviço Baileys)
     WHATSAPP_ENABLED: bool = False
-    WHATSAPP_SERVICE_URL: str = "http://localhost:3100"
+    WHATSAPP_SERVICE_URL: str = "http://127.0.0.1:3100"
     WHATSAPP_SERVICE_TOKEN: str = "change-me-whatsapp-token"
 
     @property
