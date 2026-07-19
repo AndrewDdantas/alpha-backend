@@ -79,13 +79,14 @@ services:
     env_file:
       - .env
     environment:
-      # Hosts internos da rede Docker (sobrescrevem localhost do .env)
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      MINIO_ENDPOINT: minio:9000
+      # Ignora DATABASE_URL do .env (se houver) e usa o container na rede internal
+      DATABASE_URL: ""
+      POSTGRES_HOST: alpha-postgres
+      POSTGRES_PORT: "5432"
+      MINIO_ENDPOINT: alpha-minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
-      WHATSAPP_SERVICE_URL: http://whatsapp:3100
+      WHATSAPP_SERVICE_URL: http://alpha-whatsapp:3100
     ports:
       - "${API_PORT:-8000}:8000"
     networks:
@@ -102,8 +103,6 @@ services:
       postgres:
         condition: service_healthy
       minio:
-        condition: service_started
-      whatsapp:
         condition: service_started
 
 volumes:
