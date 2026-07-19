@@ -73,32 +73,56 @@ Opcionalmente, o servico sobe com `docker compose` (service `whatsapp`, porta 31
 
 ## Infra local com Docker
 
-O `docker-compose.yml` usa o mesmo `.env` do projeto para subir Postgres e MinIO.
-Com a configuracao padrao do `.env.example`, a API roda localmente na maquina e
-acessa os servicos via `localhost`.
+O `docker-compose.yml` usa o mesmo `.env` do projeto para subir Postgres, MinIO,
+WhatsApp e a API.
 
 ```bash
 # Se ainda nao existir .env
 cp .env.example .env
 
-# Subir banco e storage
-docker compose up -d
+# Build e sobe tudo (incluindo a API)
+docker compose up -d --build
 
 # Ver status dos servicos
 docker compose ps
 
-# Aplicar migrations no banco local
-alembic upgrade head
-
 # Criar ou atualizar a conta master/admin inicial
+docker compose exec api python -m app.scripts.create_admin
+```
+
+A API aplica as migrations automaticamente no startup do container.
+
+### Traefik
+
+O service `api` entra na rede externa do Traefik (`TRAEFIK_NETWORK`, padrao `web`)
+e expoe `TRAEFIK_HOST` em `websecure` com `letsencrypt`.
+
+O redirect HTTP→HTTPS ja vem no entrypoint do Traefik, entao nao precisa de
+middleware extra na API.
+
+Se a rede do Traefik nao tiver `name: web` fixo, confira o nome real:
+
+```bash
+docker network ls | findstr web
+```
+
+E ajuste `TRAEFIK_NETWORK` no `.env` se necessario.
+
+Se preferir rodar a API no host (uvicorn local), suba so a infra:
+
+```bash
+docker compose up -d postgres minio minio-init whatsapp
+alembic upgrade head
 python -m app.scripts.create_admin
 ```
 
 Servicos locais:
 
+- API: http://localhost:${API_PORT:-8000}
 - Postgres: `localhost:${POSTGRES_PORT}`
 - MinIO API: http://localhost:9000
 - MinIO Console: http://localhost:9001
+- WhatsApp: http://localhost:${WHATSAPP_PORT:-3100}
 
 Para parar os servicos:
 

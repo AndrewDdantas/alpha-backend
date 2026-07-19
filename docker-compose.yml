@@ -63,7 +63,47 @@ services:
     volumes:
       - whatsapp_auth:/app/auth_info
 
+  api:
+    build:
+      context: .
+    container_name: alpha-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Hosts internos da rede Docker (sobrescrevem localhost do .env)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      WHATSAPP_SERVICE_URL: http://whatsapp:3100
+    ports:
+      - "${API_PORT:-8000}:8000"
+    networks:
+      - default
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-web}"
+      - "traefik.http.routers.alpha-api.rule=Host(`${TRAEFIK_HOST:-alpha-api.bg-eng-treinamentos.com.br}`)"
+      - "traefik.http.routers.alpha-api.entrypoints=websecure"
+      - "traefik.http.routers.alpha-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.alpha-api.loadbalancer.server.port=8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      whatsapp:
+        condition: service_started
+
 volumes:
   postgres_data:
   minio_data:
   whatsapp_auth:
+
+networks:
+  web:
+    external: true
+    name: ${TRAEFIK_NETWORK:-web}
