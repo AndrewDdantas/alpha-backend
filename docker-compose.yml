@@ -11,6 +11,8 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -30,12 +32,16 @@ services:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
+    networks:
+      - internal
 
   minio-init:
     image: minio/mc:RELEASE.2025-04-16T18-13-26Z
     container_name: alpha-minio-init
     depends_on:
       - minio
+    networks:
+      - internal
     entrypoint: >
       /bin/sh -c "
       until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
@@ -62,6 +68,8 @@ services:
       - "${WHATSAPP_PORT:-3100}:3100"
     volumes:
       - whatsapp_auth:/app/auth_info
+    networks:
+      - internal
 
   api:
     build:
@@ -81,7 +89,7 @@ services:
     ports:
       - "${API_PORT:-8000}:8000"
     networks:
-      - default
+      - internal
       - web
     labels:
       - "traefik.enable=true"
@@ -104,6 +112,8 @@ volumes:
   whatsapp_auth:
 
 networks:
+  internal:
+    driver: bridge
   web:
     external: true
     name: ${TRAEFIK_NETWORK:-web}
