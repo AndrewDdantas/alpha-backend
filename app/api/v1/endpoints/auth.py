@@ -110,8 +110,8 @@ def upload_foto_registro(
     Rota pública - usa CPF (hasheado) como identificador temporário.
     """
     try:
-        # Usa hash do CPF como ID temporário
-        cpf_hash = hashlib.md5(dados.cpf.encode()).hexdigest()[:8]
+        # Usa hash do CPF como ID temporário (sha256; não é armazenamento de senha)
+        cpf_hash = hashlib.sha256(dados.cpf.encode()).hexdigest()[:8]
         
         url = storage_service.upload_perfil_foto(
             foto_base64=dados.foto_base64,
